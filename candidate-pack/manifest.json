@@ -1,0 +1,17 @@
+{
+  "packId": "pack-fallback-2026-09-a1",
+  "version": "pack-fallback-2026-09-a1",
+  "description": "Structural fallback pack matching the assignment layout. Replace with the official candidate-specific pack when provided. Tenant folders use UUIDs to mirror production tenant identifiers.",
+  "tenants": [
+    "550e8400-e29b-41d4-a716-446655440001",
+    "550e8400-e29b-41d4-a716-446655440002"
+  ],
+  "activeDocuments": {
+    "550e8400-e29b-41d4-a716-446655440001": {
+      "payments": "payments-v2"
+    },
+    "550e8400-e29b-41d4-a716-446655440002": {
+      "payments": "payments-v2"
+    }
+  }
+}

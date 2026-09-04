@@ -1,0 +1,11 @@
+{
+  "services": [
+    {
+      "service": "payments-api",
+      "status": "healthy",
+      "errorRate": 0.4,
+      "latencyMs": 180,
+      "observedAt": "2026-08-31T14:15:00Z"
+    }
+  ]
+}
