@@ -3,7 +3,6 @@ import {
   Controller,
   HttpCode,
   Param,
-  ParseUUIDPipe,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -19,7 +18,7 @@ export class IncidentsController {
   @Post(':conversationId/analyze')
   @HttpCode(200)
   analyze(
-    @Param('tenantId', new ParseUUIDPipe({ version: '4' })) tenantId: string,
+    @Param('tenantId') tenantId: string,
     @Param('conversationId') conversationId: string,
     @Body() body: AnalyzeIncidentDto,
   ) {

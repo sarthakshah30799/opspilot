@@ -1,8 +1,7 @@
 /**
- * Fixture tenant IDs used by the fallback candidate pack.
- * In production these would be real org UUIDs issued by your identity/tenant service.
+ * Tenant IDs from the official candidate pack (folder names / manifest.tenantId).
  */
 export const FIXTURE_TENANT_IDS = {
-  ONE: '550e8400-e29b-41d4-a716-446655440001',
-  TWO: '550e8400-e29b-41d4-a716-446655440002',
+  NORTHSTAR: 'northstar-retail',
+  HARBOR: 'harbor-health',
 } as const;

@@ -1,17 +1,36 @@
 {
-  "packId": "pack-fallback-2026-09-a1",
-  "version": "pack-fallback-2026-09-a1",
-  "description": "Structural fallback pack matching the assignment layout. Replace with the official candidate-specific pack when provided. Tenant folders use UUIDs to mirror production tenant identifiers.",
+  "packId": "OPSPILOT-ALPHA-2026-09",
+  "version": "1.0.0",
+  "traceMarker": "ALPHA-9C7F-RETAIL-HEALTH",
+  "referenceTime": "2026-09-03T14:15:00Z",
+  "dataClassification": "fictional-evaluation-data",
   "tenants": [
-    "550e8400-e29b-41d4-a716-446655440001",
-    "550e8400-e29b-41d4-a716-446655440002"
-  ],
-  "activeDocuments": {
-    "550e8400-e29b-41d4-a716-446655440001": {
-      "payments": "payments-v2"
+    {
+      "tenantId": "northstar-retail",
+      "displayName": "Northstar Retail",
+      "timezone": "America/Chicago",
+      "services": [
+        "payments-api",
+        "catalog-api"
+      ]
     },
-    "550e8400-e29b-41d4-a716-446655440002": {
-      "payments": "payments-v2"
+    {
+      "tenantId": "harbor-health",
+      "displayName": "Harbor Health",
+      "timezone": "America/New_York",
+      "services": [
+        "payments-api",
+        "member-portal"
+      ]
     }
-  }
+  ],
+  "fixtureFilesPerTenant": [
+    "tenant.json",
+    "service-health.json",
+    "deployments.json",
+    "incident-contacts.json",
+    "sla-policies.json",
+    "tool-status.json",
+    "runbooks/*.md"
+  ]
 }

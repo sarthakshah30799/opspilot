@@ -13,6 +13,7 @@ export type ToolCallResult = {
   status: 'success' | 'error' | 'timeout';
   data?: unknown;
   error?: string;
+  errorCode?: string;
 };
 
 @Injectable()
@@ -49,7 +50,7 @@ export class OpsToolsService {
       {
         name: 'get_recent_deployments',
         description:
-          'Return recent deployments for a tenant and service from fixture data.',
+          'Return recent deployments for a tenant and service from fixture data. Honors tool-status.json overrides.',
         schema: TenantServiceSchema,
       },
     );
@@ -71,6 +72,15 @@ export class OpsToolsService {
     }
     try {
       this.dataPack.assertTenant(boundTenantId);
+      const override = this.dataPack.getToolOverride(
+        boundTenantId,
+        'get_service_health',
+        service,
+      );
+      if (override && this.isUnavailable(override.status)) {
+        return this.overrideResult('get_service_health', override);
+      }
+
       const record = this.dataPack.getServiceHealth(boundTenantId, service);
       if (!record) {
         return {
@@ -103,6 +113,15 @@ export class OpsToolsService {
     }
     try {
       this.dataPack.assertTenant(boundTenantId);
+      const override = this.dataPack.getToolOverride(
+        boundTenantId,
+        'get_recent_deployments',
+        service,
+      );
+      if (override && this.isUnavailable(override.status)) {
+        return this.overrideResult('get_recent_deployments', override);
+      }
+
       const records = this.dataPack.getRecentDeployments(
         boundTenantId,
         service,
@@ -136,6 +155,7 @@ export class OpsToolsService {
     const text = `${message} ${service}`.toLowerCase();
     const keywords = [
       'deploy',
+      'release',
       'rollback',
       'error',
       '502',
@@ -144,10 +164,40 @@ export class OpsToolsService {
       'degraded',
       'outage',
       'fail',
+      'timeout',
       'health',
       'checkout',
       'payments',
+      'portal',
+      'slow',
     ];
     return keywords.some((k) => text.includes(k));
+  }
+
+  private isUnavailable(status: string): boolean {
+    const normalized = status.toLowerCase();
+    return (
+      normalized.includes('unavailable') ||
+      normalized.includes('timeout') ||
+      normalized === 'error'
+    );
+  }
+
+  private overrideResult(
+    name: ToolCallResult['name'],
+    override: {
+      status: string;
+      errorCode?: string;
+      message?: string;
+    },
+  ): ToolCallResult {
+    const haystack = `${override.status} ${override.errorCode ?? ''}`.toLowerCase();
+    const isTimeout = haystack.includes('timeout');
+    return {
+      name,
+      status: isTimeout ? 'timeout' : 'error',
+      errorCode: override.errorCode,
+      error: override.message ?? override.status,
+    };
   }
 }

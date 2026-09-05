@@ -36,9 +36,12 @@ Flow: retrieve active chunks → optionally call up to two tools by keyword rele
 ## Retrieval and tenant filtering
 
 - Runbooks are chunked on `#` / `##` / `###` headings with metadata: `tenantId`, `documentId`, `version`, `active`, `section`, `stem`.
+- YAML front matter supplies official `documentId` and `status` (`active` / `superseded` / `draft`).
 - Each tenant gets its **own** `MemoryVectorStore`. There is no shared index queried with a prompt filter.
 - Default retrieval returns **active** documents only (superseded versions stay indexed for diagnostics but are filtered out).
-- Active selection: `manifest.activeDocuments` override, else highest `-vN` per stem.
+- Active selection: front matter `status: active` first; otherwise `manifest.activeDocuments` / highest `-vN`.
+- Tools honor `tool-status.json` overrides before reading fixture JSON (timeout/unavailable → structured error).
+- Responses include `packId` and `traceMarker` from `manifest.json`. Prompt receives `referenceTime` for deterministic “now”.
 
 Retrieval quality (future): gold-question set per tenant, recall@k on section titles, and regression tests for superseded leakage.
 

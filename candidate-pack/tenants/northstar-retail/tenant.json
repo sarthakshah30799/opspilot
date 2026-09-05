@@ -1,0 +1,19 @@
+{
+  "tenantId": "northstar-retail",
+  "displayName": "Northstar Retail",
+  "industry": "ecommerce",
+  "timezone": "America/Chicago",
+  "defaultLanguage": "en-US",
+  "services": [
+    {
+      "service": "payments-api",
+      "criticality": "tier-0",
+      "ownerTeam": "Checkout Platform"
+    },
+    {
+      "service": "catalog-api",
+      "criticality": "tier-1",
+      "ownerTeam": "Merchandising Platform"
+    }
+  ]
+}

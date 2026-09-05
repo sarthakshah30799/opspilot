@@ -15,6 +15,8 @@ export const IncidentAnalysisResponseSchema = z.object({
   conversationId: z.string(),
   tenantId: z.string(),
   dataPackVersion: z.string(),
+  packId: z.string(),
+  traceMarker: z.string(),
   summary: z.string(),
   severity: z.string(),
   recommendedAction: z.string(),

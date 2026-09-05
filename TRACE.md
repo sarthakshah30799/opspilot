@@ -1,16 +1,20 @@
 # TRACE — end-to-end request
 
-**Data pack:** `pack-fallback-2026-09-a1` (structural fallback until official candidate pack is provided)
+**Data pack:** `OPSPILOT-ALPHA-2026-09`  
+**Trace marker:** `ALPHA-9C7F-RETAIL-HEALTH`  
+**Reference time:** `2026-09-03T14:15:00Z`
 
 ## Input
 
+Sample incident `alpha-01-recent-release` from `sample-incidents.json`:
+
 ```http
-POST /api/v1/tenants/550e8400-e29b-41d4-a716-446655440001/incidents/incident-123/analyze
+POST /api/v1/tenants/northstar-retail/incidents/alpha-conv-01/analyze
 ```
 
 ```json
 {
-  "message": "The payments API started returning 502 errors shortly after today's deployment. This is affecting checkout for multiple users.",
+  "message": "Checkout began returning 502 responses shortly after today's payments release. Multiple customers cannot complete orders. Should we roll back?",
   "severity": "P1",
   "service": "payments-api"
 }
@@ -18,46 +22,51 @@ POST /api/v1/tenants/550e8400-e29b-41d4-a716-446655440001/incidents/incident-123
 
 ## Tenant
 
-`550e8400-e29b-41d4-a716-446655440001` (UUID v4 validated via `TenantGuard` / `ParseUUIDPipe`, then resolved against the data pack).
+`northstar-retail` (validated against pack tenant folders / manifest).
 
 ## Retrieval
 
-Query roughly: `payments-api` + incident message.
+Query: `payments-api` + incident message. Active-only filter applied.
 
-Typical active chunks (document ids):
+Retrieved active document ids (from runbook front matter):
 
-- `payments-v2` — section **Rollback Criteria** (active)
-- `payments-v2` — **Investigation Steps** / related sections
-- Possibly `incident-escalation` contact guidance
+- `northstar-payments-v2` (status `active`) — rollback / evidence sections
+- Possibly `northstar-escalation` contact guidance
 
-Superseded `payments-v1` (immediate rollback without approval) is **not** returned when `activeOnly=true`.
+Superseded `northstar-payments-v1` is not used when `activeOnly=true`.
 
 ## Tools called
 
 | Tool | Status | Notes |
 |------|--------|-------|
-| `get_service_health` | success | `payments-api` degraded, errorRate `8.4` |
-| `get_recent_deployments` | success | latest `1.14.2` at `2026-08-31T14:00:00Z` |
+| `get_service_health` | success | `payments-api` degraded, `errorRatePercent` `8.6` |
+| `get_recent_deployments` | success | latest `4.18.0` / `deploy-100` at `2026-09-03T13:55:00Z` |
 
-Tools were selected because the message matched deployment/error keywords. Tenant id bound to `550e8400-e29b-41d4-a716-446655440001` only.
+Tenant id bound to `northstar-retail` only. Harbor fixtures are never read.
 
 ## Intermediate decisions
 
-1. Evidence treated as untrusted; injection paragraph in `payments-v2` ignored for control flow.
-2. Demo model matched deployment/502 pattern → `prepare_rollback`.
+1. Evidence treated as untrusted; any instructional-looking runbook text ignored for control flow.
+2. Demo model matched release/502 pattern → `prepare_rollback`.
 3. Model may emit `requiresHumanApproval: false`; **ApprovalEnforcer** sets it to `true` because `prepare_rollback` is consequential.
-4. Response `tenantId` / `dataPackVersion` taken from request + manifest, not from the model.
+4. Response `tenantId`, `packId`, `traceMarker`, and `dataPackVersion` come from the request + manifest, not the model.
+5. `referenceTime` from the manifest is passed into the prompt as deterministic “now”.
 
 ## Final output (shape)
 
-- `tenantId`: `550e8400-e29b-41d4-a716-446655440001`
+- `tenantId`: `northstar-retail`
+- `packId`: `OPSPILOT-ALPHA-2026-09`
+- `traceMarker`: `ALPHA-9C7F-RETAIL-HEALTH`
 - `recommendedAction`: `prepare_rollback`
 - `requiresHumanApproval`: `true`
 - `confidence`: ~0.84
-- `citations`: includes `payments-v2` / Rollback Criteria
+- `citations`: includes `northstar-payments-v2`
 - `toolsUsed`: both tools `success`
-- `dataPackVersion`: `pack-fallback-2026-09-a1`
+
+## Related pack check — tool failure
+
+For Harbor `member-portal`, `tool-status.json` marks `get_recent_deployments` as `DEPLOYMENT_FEED_TIMEOUT`. The tool returns `timeout` and does not expose raw deployment fixture rows for that service.
 
 ## Limitation noticed
 
-Synthetic embeddings + demo keyword routing are good enough for the take-home, but retrieval ranking is weaker than a real embedding model. After swapping in the official candidate pack, re-check that the intended active sections still surface in top-k for the evaluation scenarios.
+Synthetic embeddings + demo keyword routing are good enough for deterministic review, but retrieval ranking is weaker than a production embedding model. Re-check top-k sections if the live model path is enabled later.

@@ -12,7 +12,7 @@
 - Local verification via `pnpm run build`, `pnpm test`, and `pnpm test:e2e`
 - Tenant isolation design: per-tenant vector stores, tool `tenant_mismatch` handling, conversation keying by `tenantId` + `conversationId`
 - Consequential-action human-approval override enforced in application code (independent of model output)
-- `candidate-pack/` is a structural fallback until the official candidate-specific pack is provided
+- Noted that behavior is derived from the official `candidate-pack/` (`OPSPILOT-ALPHA-2026-09`) rather than hard-coded tenant thresholds
 
 ## Ownership
 

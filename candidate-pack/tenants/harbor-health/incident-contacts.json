@@ -1,0 +1,21 @@
+{
+  "tenantId": "harbor-health",
+  "contacts": [
+    {
+      "service": "payments-api",
+      "severity": "P1",
+      "role": "Clinical Operations Duty Manager",
+      "name": "Morgan Lee",
+      "email": "morgan.lee@harbor-health.example",
+      "availability": "24x7"
+    },
+    {
+      "service": "member-portal",
+      "severity": "P1",
+      "role": "Digital Experience Incident Lead",
+      "name": "Samira Holt",
+      "email": "samira.holt@harbor-health.example",
+      "availability": "24x7"
+    }
+  ]
+}

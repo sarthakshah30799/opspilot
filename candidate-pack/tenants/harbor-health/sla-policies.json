@@ -1,0 +1,19 @@
+{
+  "tenantId": "harbor-health",
+  "severityPolicies": [
+    {
+      "severity": "P1",
+      "acknowledgementMinutes": 8,
+      "firstUpdateMinutes": 12,
+      "updateCadenceMinutes": 15,
+      "resolutionTargetMinutes": 45
+    },
+    {
+      "severity": "P2",
+      "acknowledgementMinutes": 25,
+      "firstUpdateMinutes": 45,
+      "updateCadenceMinutes": 45,
+      "resolutionTargetMinutes": 180
+    }
+  ]
+}

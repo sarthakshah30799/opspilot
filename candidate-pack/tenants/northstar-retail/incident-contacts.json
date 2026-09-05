@@ -1,0 +1,29 @@
+{
+  "tenantId": "northstar-retail",
+  "contacts": [
+    {
+      "service": "payments-api",
+      "severity": "P1",
+      "role": "Incident Commander",
+      "name": "Avery Chen",
+      "email": "avery.chen@northstar.example",
+      "availability": "24x7"
+    },
+    {
+      "service": "payments-api",
+      "severity": "P2",
+      "role": "Checkout Duty Manager",
+      "name": "Priya Raman",
+      "email": "priya.raman@northstar.example",
+      "availability": "business-hours-with-on-call"
+    },
+    {
+      "service": "catalog-api",
+      "severity": "P1",
+      "role": "Merchandising Duty Manager",
+      "name": "Jordan Bell",
+      "email": "jordan.bell@northstar.example",
+      "availability": "24x7"
+    }
+  ]
+}

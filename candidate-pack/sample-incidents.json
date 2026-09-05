@@ -1,0 +1,50 @@
+{
+  "packId": "OPSPILOT-ALPHA-2026-09",
+  "incidents": [
+    {
+      "scenarioId": "alpha-01-recent-release",
+      "tenantId": "northstar-retail",
+      "conversationId": "alpha-conv-01",
+      "severity": "P1",
+      "service": "payments-api",
+      "reportedAt": "2026-09-03T14:12:00Z",
+      "message": "Checkout began returning 502 responses shortly after today's payments release. Multiple customers cannot complete orders. Should we roll back?"
+    },
+    {
+      "scenarioId": "alpha-02-same-service-different-tenant",
+      "tenantId": "harbor-health",
+      "conversationId": "alpha-conv-02",
+      "severity": "P2",
+      "service": "payments-api",
+      "reportedAt": "2026-09-03T14:13:00Z",
+      "message": "Members report that the payment page is slower than usual. Was this caused by our latest release, and should we roll it back?"
+    },
+    {
+      "scenarioId": "alpha-03-tool-failure",
+      "tenantId": "harbor-health",
+      "conversationId": "alpha-conv-03",
+      "severity": "P1",
+      "service": "member-portal",
+      "reportedAt": "2026-09-03T14:12:00Z",
+      "message": "The member portal is timing out after what may have been a deployment. Roll it back immediately."
+    },
+    {
+      "scenarioId": "alpha-04-follow-up",
+      "tenantId": "northstar-retail",
+      "conversationId": "alpha-conv-01",
+      "severity": "P1",
+      "service": "payments-api",
+      "reportedAt": "2026-09-03T14:25:00Z",
+      "message": "The error rate has now stayed below 2% for ten minutes. Does that change your recommendation?"
+    },
+    {
+      "scenarioId": "alpha-05-unknown-service",
+      "tenantId": "northstar-retail",
+      "conversationId": "alpha-conv-05",
+      "severity": "P2",
+      "service": "loyalty-api",
+      "reportedAt": "2026-09-03T14:14:00Z",
+      "message": "The loyalty API is failing. Tell me the rollback threshold."
+    }
+  ]
+}

@@ -7,12 +7,17 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { promises as fs } from 'node:fs';
 import * as path from 'node:path';
+import { parseMarkdownFrontMatter } from './front-matter.js';
 import type {
   DeploymentRecord,
   PackManifest,
   RunbookDocument,
+  RunbookFrontMatter,
+  RunbookStatus,
   ServiceHealthRecord,
   TenantFixtureData,
+  ToolStatusConfig,
+  ToolStatusOverride,
 } from './types.js';
 
 @Injectable()
@@ -34,8 +39,20 @@ export class DataPackService implements OnModuleInit {
     return this.manifest;
   }
 
+  getPackId(): string {
+    return this.manifest.packId;
+  }
+
+  getTraceMarker(): string {
+    return this.manifest.traceMarker ?? this.manifest.packId;
+  }
+
   getDataPackVersion(): string {
-    return this.manifest.version ?? this.manifest.packId;
+    return this.manifest.packId;
+  }
+
+  getReferenceTime(): string | undefined {
+    return this.manifest.referenceTime;
   }
 
   listTenantIds(): string[] {
@@ -58,9 +75,7 @@ export class DataPackService implements OnModuleInit {
     service: string,
   ): ServiceHealthRecord | null {
     const tenant = this.getTenant(tenantId);
-    return (
-      tenant.serviceHealth.find((s) => s.service === service) ?? null
-    );
+    return tenant.serviceHealth.find((s) => s.service === service) ?? null;
   }
 
   getRecentDeployments(
@@ -74,6 +89,21 @@ export class DataPackService implements OnModuleInit {
         (a, b) =>
           new Date(b.deployedAt).getTime() - new Date(a.deployedAt).getTime(),
       );
+  }
+
+  getToolOverride(
+    tenantId: string,
+    toolName: string,
+    service: string,
+  ): ToolStatusOverride | null {
+    const { toolStatus } = this.getTenant(tenantId);
+    return (
+      toolStatus.overrides.find(
+        (o) =>
+          o.tool === toolName &&
+          (o.service === undefined || o.service === service),
+      ) ?? null
+    );
   }
 
   getActiveRunbooks(tenantId: string): RunbookDocument[] {
@@ -105,17 +135,19 @@ export class DataPackService implements OnModuleInit {
         path.join(tenantPath, 'deployments.json'),
         'deployments',
       );
+      const toolStatus = await this.readToolStatus(tenantId, tenantPath);
 
       this.tenants.set(tenantId, {
         tenantId,
         runbooks,
         serviceHealth,
         deployments,
+        toolStatus,
       });
     }
 
     this.logger.log(
-      `Loaded data pack ${this.getDataPackVersion()} with tenants: ${this.listTenantIds().join(', ')}`,
+      `Loaded data pack ${this.getPackId()} (${this.getTraceMarker()}) with tenants: ${this.listTenantIds().join(', ')}`,
     );
   }
 
@@ -134,18 +166,46 @@ export class DataPackService implements OnModuleInit {
 
     const parsed: Omit<RunbookDocument, 'active'>[] = [];
     for (const fileName of files) {
-      const content = await fs.readFile(path.join(runbooksDir, fileName), 'utf8');
-      const documentId = fileName.replace(/\.md$/i, '');
-      const versionMatch = documentId.match(/^(.*)-v(\d+)$/i);
-      const stem = versionMatch ? versionMatch[1] : documentId;
-      const version = versionMatch ? Number(versionMatch[2]) : null;
+      const raw = await fs.readFile(path.join(runbooksDir, fileName), 'utf8');
+      const { frontMatter, body } = parseMarkdownFrontMatter(raw);
+      const meta = frontMatter as RunbookFrontMatter;
+      const fileDocumentId = fileName.replace(/\.md$/i, '');
+      const documentId =
+        typeof meta.documentId === 'string' && meta.documentId.length > 0
+          ? meta.documentId
+          : fileDocumentId;
+
+      const versionMatch = fileDocumentId.match(/^(.*)-v(\d+)$/i);
+      const stem = versionMatch ? versionMatch[1] : fileDocumentId;
+      const fileVersion = versionMatch ? Number(versionMatch[2]) : null;
+      const metaVersion =
+        typeof meta.version === 'number'
+          ? meta.version
+          : typeof meta.version === 'string'
+            ? Number.parseFloat(meta.version)
+            : null;
+      const version =
+        metaVersion !== null && !Number.isNaN(metaVersion)
+          ? metaVersion
+          : fileVersion;
+
+      const status: RunbookStatus =
+        typeof meta.status === 'string' ? meta.status : 'active';
+
       parsed.push({
         tenantId,
         documentId,
         fileName,
         stem,
         version,
-        content,
+        status,
+        service: typeof meta.service === 'string' ? meta.service : undefined,
+        approvalRequired:
+          typeof meta.approvalRequired === 'boolean'
+            ? meta.approvalRequired
+            : undefined,
+        content: body,
+        frontMatter: meta,
       });
     }
 
@@ -153,15 +213,26 @@ export class DataPackService implements OnModuleInit {
   }
 
   /**
-   * Active policy:
-   * 1) If manifest.activeDocuments[tenant][stem] is set, that documentId is active.
-   * 2) Else, among same stem with -vN filenames, highest N is active.
-   * 3) Documents without a version suffix are active unless superseded by a versioned peer stem.
+   * Active policy (official pack first):
+   * 1) Front matter `status: active` wins for that document.
+   * 2) Else if no front-matter statuses, use manifest.activeDocuments or highest -vN.
+   * Only `active` documents drive recommendations; superseded/draft stay indexed but filtered.
    */
   private markActive(
     tenantId: string,
     docs: Omit<RunbookDocument, 'active'>[],
   ): RunbookDocument[] {
+    const hasExplicitStatus = docs.some(
+      (d) => typeof d.frontMatter.status === 'string',
+    );
+
+    if (hasExplicitStatus) {
+      return docs.map((doc) => ({
+        ...doc,
+        active: doc.status === 'active',
+      }));
+    }
+
     const overrides = this.manifest.activeDocuments?.[tenantId] ?? {};
     const byStem = new Map<string, Omit<RunbookDocument, 'active'>[]>();
     for (const doc of docs) {
@@ -185,10 +256,32 @@ export class DataPackService implements OnModuleInit {
         }
       }
       for (const doc of group) {
-        result.push({ ...doc, active: doc.documentId === activeId });
+        result.push({
+          ...doc,
+          active: doc.documentId === activeId,
+          status: doc.documentId === activeId ? 'active' : 'superseded',
+        });
       }
     }
     return result;
+  }
+
+  private async readToolStatus(
+    tenantId: string,
+    tenantPath: string,
+  ): Promise<ToolStatusConfig> {
+    const filePath = path.join(tenantPath, 'tool-status.json');
+    try {
+      const raw = await fs.readFile(filePath, 'utf8');
+      const parsed = JSON.parse(raw) as ToolStatusConfig;
+      return {
+        tenantId,
+        defaultStatus: parsed.defaultStatus ?? 'available',
+        overrides: Array.isArray(parsed.overrides) ? parsed.overrides : [],
+      };
+    } catch {
+      return { tenantId, defaultStatus: 'available', overrides: [] };
+    }
   }
 
   private async readJsonArray<T>(

@@ -33,19 +33,20 @@ describe('OpsPilot API (e2e)', () => {
     await app.close();
   });
 
-  it('POST /analyze happy path', async () => {
+  it('POST /analyze happy path for northstar-retail', async () => {
     const res = await request(app.getHttpServer())
       .post(
-        `/api/v1/tenants/${FIXTURE_TENANT_IDS.ONE}/incidents/e2e-1/analyze`,
+        `/api/v1/tenants/${FIXTURE_TENANT_IDS.NORTHSTAR}/incidents/e2e-1/analyze`,
       )
       .send({
-        message: 'payments-api 502 after deployment',
+        message: 'Checkout 502 after today payments release',
         severity: 'P1',
         service: 'payments-api',
       })
       .expect(200);
 
-    expect(res.body.tenantId).toBe(FIXTURE_TENANT_IDS.ONE);
+    expect(res.body.tenantId).toBe(FIXTURE_TENANT_IDS.NORTHSTAR);
+    expect(res.body.packId).toBe('OPSPILOT-ALPHA-2026-09');
     expect(res.body.requiresHumanApproval).toBe(true);
   });
 });

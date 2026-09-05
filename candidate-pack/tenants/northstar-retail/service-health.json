@@ -1,0 +1,46 @@
+{
+  "tenantId": "northstar-retail",
+  "generatedAt": "2026-09-03T14:12:30Z",
+  "services": [
+    {
+      "service": "payments-api",
+      "status": "degraded",
+      "observedAt": "2026-09-03T14:12:00Z",
+      "windowStart": "2026-09-03T14:00:00Z",
+      "windowEnd": "2026-09-03T14:12:00Z",
+      "windowMinutes": 12,
+      "errorRatePercent": 8.6,
+      "p95LatencyMs": 1460,
+      "checkoutSuccessPercent": 89.7,
+      "affectedChannels": [
+        "web",
+        "mobile"
+      ],
+      "affectedRegions": [
+        "us-central",
+        "us-east"
+      ],
+      "freshnessThresholdMinutes": 5,
+      "dependencyObservations": [
+        {
+          "dependency": "card-tokenization",
+          "status": "operational"
+        },
+        {
+          "dependency": "order-service",
+          "status": "operational"
+        }
+      ]
+    },
+    {
+      "service": "catalog-api",
+      "status": "operational",
+      "observedAt": "2026-09-03T14:13:00Z",
+      "windowMinutes": 15,
+      "errorRatePercent": 0.4,
+      "p95LatencyMs": 182,
+      "freshnessThresholdMinutes": 5,
+      "dependencyObservations": []
+    }
+  ]
+}

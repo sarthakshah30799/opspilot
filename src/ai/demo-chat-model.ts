@@ -5,7 +5,7 @@ import type { CallbackManagerForLLMRun } from '@langchain/core/callbacks/manager
 
 /**
  * Deterministic chat model for DEMO_MODE / tests.
- * Pattern-matches the latest user content and returns schema-shaped JSON.
+ * Pattern-matches prompt content and returns schema-shaped JSON.
  */
 export class DemoChatModel extends BaseChatModel {
   forceInvalidOutput = false;
@@ -35,102 +35,157 @@ export class DemoChatModel extends BaseChatModel {
     };
   }
 
+  private citationFromEvidence(blob: string, reason: string) {
+    const docMatch = blob.match(/documentId=([^\s]+)/);
+    const sectionMatch = blob.match(/section=([^\n]+)/);
+    return {
+      documentId: docMatch?.[1] ?? 'unknown-document',
+      section: sectionMatch?.[1]?.trim() ?? 'Rollback criteria',
+      reason,
+    };
+  }
+
   private buildPayload(lower: string, blob: string) {
+    const toolTimedOut =
+      lower.includes('deployment_feed_timeout') ||
+      lower.includes('temporarily_unavailable') ||
+      lower.includes('"status": "timeout"');
+
     const missingEvidence =
-      lower.includes('slow') &&
-      !lower.includes('error rate') &&
-      !lower.includes('deploy') &&
-      !lower.includes('502');
+      (lower.includes('slow') || lower.includes('slower')) &&
+      !lower.includes('502') &&
+      !lower.includes('error rate has now');
 
     const followUpImproved =
       lower.includes('dropped') ||
       lower.includes('below 2') ||
-      lower.includes('1%') ||
+      lower.includes('stayed below 2') ||
       lower.includes('error rate has now');
+
+    const unknownService =
+      lower.includes('loyalty-api') || lower.includes('service=loyalty-api');
+
+    if (unknownService) {
+      return {
+        summary:
+          'No active runbook or telemetry was available for loyalty-api in this tenant pack.',
+        severity: 'P2',
+        recommendedAction: 'gather_more_information',
+        actionPlan: [
+          'Confirm the correct service identifier with the reporter.',
+          'Locate an active runbook covering loyalty-api before recommending rollback thresholds.',
+        ],
+        requiresHumanApproval: false,
+        confidence: 0.25,
+        assumptions: [],
+        missingInformation: [
+          'Active loyalty-api runbook for this tenant',
+          'Service health and deployment evidence for loyalty-api',
+        ],
+        citations: [],
+      };
+    }
+
+    if (toolTimedOut) {
+      return {
+        summary:
+          'Member portal appears degraded, but deployment evidence is unavailable due to a tool timeout.',
+        severity: 'P1',
+        recommendedAction: 'gather_more_information',
+        actionPlan: [
+          'Retry the deployment feed when it recovers.',
+          'Continue monitoring member-portal health signals.',
+          'Do not execute an immediate rollback without confirmed release correlation.',
+        ],
+        requiresHumanApproval: true,
+        confidence: 0.3,
+        assumptions: [],
+        missingInformation: [
+          'Recent deployment timing (deployment feed timed out)',
+          'Confirmed correlation between a release and the timeouts',
+        ],
+        citations: blob.includes('documentId=')
+          ? [
+              this.citationFromEvidence(
+                blob,
+                'Active runbook still requires verified deployment correlation before rollback.',
+              ),
+            ]
+          : [],
+      };
+    }
 
     if (missingEvidence) {
       return {
         summary:
-          'The report that payments are slow lacks concrete telemetry or deployment correlation.',
+          'Reported slowness alone is not enough to justify rollback for this tenant.',
         severity: 'P2',
         recommendedAction: 'gather_more_information',
         actionPlan: [
-          'Ask for current error rate and latency for payments-api.',
-          'Confirm whether a recent deployment occurred.',
-          'Identify which tenant-facing symptom is being observed.',
+          'Confirm current error rate, latency, and dependency health.',
+          'Check whether a recent tenant-owned deployment correlates with the symptom.',
+          'Escalate to vendor paths if dependencies are the primary failure.',
         ],
         requiresHumanApproval: false,
-        confidence: 0.35,
+        confidence: 0.4,
         assumptions: [],
         missingInformation: [
-          'Current error rate and latency metrics',
-          'Recent deployment history confirmation',
-          'Affected user volume / duration',
+          'Sustained error-rate evidence above rollback thresholds',
+          'Confirmed recent tenant-owned deployment correlation',
         ],
-        citations: [],
+        citations: blob.includes('documentId=')
+          ? [
+              this.citationFromEvidence(
+                blob,
+                'Active policy requires stronger evidence before rollback.',
+              ),
+            ]
+          : [],
       };
     }
 
     if (followUpImproved) {
       return {
         summary:
-          'Updated context indicates the error rate has dropped substantially; immediate rollback is less justified.',
+          'Updated telemetry shows the error rate has recovered below the rollback threshold; immediate rollback is less justified.',
         severity: 'P2',
         recommendedAction: 'continue_monitoring',
         actionPlan: [
-          'Continue monitoring payments-api error rate and latency.',
-          'Keep the prior rollback request drafted but do not escalate execution.',
-          'Document the recovery timeline for the incident record.',
+          'Continue monitoring payments-api error rate and checkout success.',
+          'Keep any drafted rollback request on hold unless the threshold is breached again.',
+          'Document the recovery window for the incident record.',
         ],
         requiresHumanApproval: false,
-        confidence: 0.72,
+        confidence: 0.74,
         assumptions: [
-          'The reported 1% / sub-2% error rate is accurate and sustained.',
+          'The reported sub-2% error rate is accurate and sustained.',
         ],
         missingInformation: [],
         citations: [
-          {
-            documentId: 'payments-v2',
-            section: 'Rollback Criteria',
-            reason:
-              'Active policy ties rollback to sustained elevated error rate after deployment.',
-          },
+          this.citationFromEvidence(
+            blob,
+            'Active policy ties rollback to sustained elevated error rate after deployment.',
+          ),
         ],
       };
     }
 
     const hasDeploySignal =
       lower.includes('deploy') ||
+      lower.includes('release') ||
       lower.includes('502') ||
       lower.includes('rollback') ||
       lower.includes('error');
 
     if (hasDeploySignal) {
-      const citations = [];
-      if (blob.includes('Rollback Criteria') || blob.includes('payments-v2')) {
-        citations.push({
-          documentId: 'payments-v2',
-          section: 'Rollback Criteria',
-          reason:
-            'Defines the active rollback threshold and approval rule.',
-        });
-      } else {
-        citations.push({
-          documentId: 'payments-v2',
-          section: 'Rollback Criteria',
-          reason:
-            'Active payments runbook governs rollback after deployment-related incidents.',
-        });
-      }
-
       return {
         summary:
-          'The payments API appears degraded following a recent deployment.',
+          'Payments API degradation correlates with a recent release; prepare a rollback request under the active tenant policy.',
         severity: 'P1',
         recommendedAction: 'prepare_rollback',
         actionPlan: [
-          'Confirm that the elevated error rate is still present.',
-          'Compare the incident start time with the latest deployment.',
+          'Confirm the elevated error rate is still present against the active threshold.',
+          'Compare incident timing with the latest payments-api deployment.',
           'Prepare a rollback request for human approval.',
           'Notify the tenant incident contact.',
         ],
@@ -140,7 +195,12 @@ export class DemoChatModel extends BaseChatModel {
           'The latest deployment is related to the current error increase.',
         ],
         missingInformation: [],
-        citations,
+        citations: [
+          this.citationFromEvidence(
+            blob,
+            'Defines the active rollback threshold and approval rule.',
+          ),
+        ],
       };
     }
 

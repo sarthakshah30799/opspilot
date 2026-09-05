@@ -1,0 +1,13 @@
+{
+  "tenantId": "northstar-retail",
+  "defaultStatus": "available",
+  "overrides": [
+    {
+      "tool": "get_incident_contact",
+      "service": "catalog-api",
+      "status": "temporarily_unavailable",
+      "errorCode": "CONTACT_DIRECTORY_TIMEOUT",
+      "message": "The contact directory did not respond within the configured timeout."
+    }
+  ]
+}

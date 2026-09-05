@@ -1,0 +1,13 @@
+{
+  "tenantId": "harbor-health",
+  "defaultStatus": "available",
+  "overrides": [
+    {
+      "tool": "get_recent_deployments",
+      "service": "member-portal",
+      "status": "temporarily_unavailable",
+      "errorCode": "DEPLOYMENT_FEED_TIMEOUT",
+      "message": "The deployment feed timed out. Do not infer release timing from the raw fixture in normal tool mode."
+    }
+  ]
+}

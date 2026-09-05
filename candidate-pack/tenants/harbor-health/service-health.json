@@ -1,0 +1,47 @@
+{
+  "tenantId": "harbor-health",
+  "generatedAt": "2026-09-03T14:13:20Z",
+  "services": [
+    {
+      "service": "payments-api",
+      "status": "degraded",
+      "observedAt": "2026-09-03T14:12:30Z",
+      "windowStart": "2026-09-03T13:57:30Z",
+      "windowEnd": "2026-09-03T14:12:30Z",
+      "windowMinutes": 15,
+      "errorRatePercent": 2.1,
+      "p95LatencyMs": 910,
+      "paymentCompletionPercent": 97.2,
+      "freshnessThresholdMinutes": 5,
+      "dependencyObservations": [
+        {
+          "dependency": "clearinghouse-gateway",
+          "status": "intermittent",
+          "errorRatePercent": 6.8
+        },
+        {
+          "dependency": "member-ledger",
+          "status": "operational"
+        }
+      ]
+    },
+    {
+      "service": "member-portal",
+      "status": "degraded",
+      "observedAt": "2026-09-03T14:11:00Z",
+      "windowStart": "2026-09-03T14:02:00Z",
+      "windowEnd": "2026-09-03T14:11:00Z",
+      "windowMinutes": 9,
+      "errorRatePercent": 6.4,
+      "p95LatencyMs": 1880,
+      "loginSuccessPercent": 91.5,
+      "freshnessThresholdMinutes": 5,
+      "dependencyObservations": [
+        {
+          "dependency": "identity-provider",
+          "status": "operational"
+        }
+      ]
+    }
+  ]
+}

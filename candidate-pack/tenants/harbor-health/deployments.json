@@ -1,0 +1,28 @@
+{
+  "tenantId": "harbor-health",
+  "generatedAt": "2026-09-03T14:13:30Z",
+  "deployments": [
+    {
+      "deploymentId": "deploy-100",
+      "service": "payments-api",
+      "version": "9.2.1",
+      "deployedAt": "2026-08-30T09:00:00Z",
+      "completedAt": "2026-08-30T09:06:00Z",
+      "status": "completed",
+      "changeSummary": "Invoice PDF metadata update.",
+      "rollbackArtifactAvailable": true,
+      "initiatedBy": "harbor-release-bot"
+    },
+    {
+      "deploymentId": "deploy-441",
+      "service": "member-portal",
+      "version": "6.11.0",
+      "deployedAt": "2026-09-03T13:59:00Z",
+      "completedAt": "2026-09-03T14:01:00Z",
+      "status": "completed",
+      "changeSummary": "Accessibility and session-timeout changes.",
+      "rollbackArtifactAvailable": true,
+      "initiatedBy": "harbor-release-bot"
+    }
+  ]
+}

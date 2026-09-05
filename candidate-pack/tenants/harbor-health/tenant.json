@@ -1,0 +1,19 @@
+{
+  "tenantId": "harbor-health",
+  "displayName": "Harbor Health",
+  "industry": "health-services",
+  "timezone": "America/New_York",
+  "defaultLanguage": "en-US",
+  "services": [
+    {
+      "service": "payments-api",
+      "criticality": "tier-1",
+      "ownerTeam": "Member Billing"
+    },
+    {
+      "service": "member-portal",
+      "criticality": "tier-0",
+      "ownerTeam": "Digital Member Experience"
+    }
+  ]
+}
